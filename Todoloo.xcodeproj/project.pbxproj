@@ -1,0 +1,472 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		086AD4A7958BCEB56C05B389 /* TodolooApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D29F0AE2048E839A284852F /* TodolooApp.swift */; };
+		1AA93A7DB7DF7AC245E609D7 /* TodoFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42AFBDE4E55FAAE7CCDAD07B /* TodoFilter.swift */; };
+		1BE98CDD5D3C50D796D52A2A /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15D4A28785FA70F0E9C2E5C9 /* SidebarView.swift */; };
+		272DCC454D67EFE20338CB06 /* TodoInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A8FEB49EA048B12C5B13761 /* TodoInspectorView.swift */; };
+		32F49375CE203E99395204B7 /* AppNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66470675B19E08838C4567EF /* AppNotifications.swift */; };
+		4C50A04BB9A900DD7C94497F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DB9294F59B31C85E453EFAB6 /* Assets.xcassets */; };
+		526D609E0F4F80C0B172F747 /* TodoListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82A732502D7D62C00151128D /* TodoListView.swift */; };
+		679694F6E3DBCEFBEB62135E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CAD3D23D3EB0E78027841E6 /* ContentView.swift */; };
+		8888388FF09B8000045D0E68 /* TodoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A906133488EAD3B6F3653A /* TodoItem.swift */; };
+		AAADCB4A8CF4AA17CA73707A /* TodoRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EEF06BCA3B933297C0956B7 /* TodoRowView.swift */; };
+		AD7A3D0F1F882FCF0B726634 /* TodolooTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 133D742D1FEA976377187DE5 /* TodolooTests.swift */; };
+		D835A2C493C9A9B79E0C4309 /* ReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB2D980E3C03848674F33D86 /* ReminderScheduler.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B370E5372E4B496AC06C95FC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 77CF20365835404246BE20CF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3D451F9009BD889F396BC63E;
+			remoteInfo = Todoloo;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0D29F0AE2048E839A284852F /* TodolooApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodolooApp.swift; sourceTree = "<group>"; };
+		133D742D1FEA976377187DE5 /* TodolooTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodolooTests.swift; sourceTree = "<group>"; };
+		15D4A28785FA70F0E9C2E5C9 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		1B3F149BE317EFCE9B306CA3 /* Todoloo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Todoloo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3EEF06BCA3B933297C0956B7 /* TodoRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoRowView.swift; sourceTree = "<group>"; };
+		42AFBDE4E55FAAE7CCDAD07B /* TodoFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoFilter.swift; sourceTree = "<group>"; };
+		4A8FEB49EA048B12C5B13761 /* TodoInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoInspectorView.swift; sourceTree = "<group>"; };
+		66470675B19E08838C4567EF /* AppNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNotifications.swift; sourceTree = "<group>"; };
+		82A732502D7D62C00151128D /* TodoListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListView.swift; sourceTree = "<group>"; };
+		8CAD3D23D3EB0E78027841E6 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B2A906133488EAD3B6F3653A /* TodoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItem.swift; sourceTree = "<group>"; };
+		BEF9F634A5E2EF0C3007FB75 /* TodolooTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TodolooTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C2175E1D7916570A96C319B6 /* Todoloo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Todoloo.entitlements; sourceTree = "<group>"; };
+		DB9294F59B31C85E453EFAB6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		FB2D980E3C03848674F33D86 /* ReminderScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderScheduler.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		19C3D35FF0A8308B23832B7A /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				66470675B19E08838C4567EF /* AppNotifications.swift */,
+				FB2D980E3C03848674F33D86 /* ReminderScheduler.swift */,
+				42AFBDE4E55FAAE7CCDAD07B /* TodoFilter.swift */,
+				B2A906133488EAD3B6F3653A /* TodoItem.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		1B5165C8A899C5199124415E = {
+			isa = PBXGroup;
+			children = (
+				9E4830AA860294B7AA6678DA /* Todoloo */,
+				785B6BF21FF8D10D8F847073 /* TodolooTests */,
+				2AFA0A528B7F5A98817DF08B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		2AFA0A528B7F5A98817DF08B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1B3F149BE317EFCE9B306CA3 /* Todoloo.app */,
+				BEF9F634A5E2EF0C3007FB75 /* TodolooTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		785B6BF21FF8D10D8F847073 /* TodolooTests */ = {
+			isa = PBXGroup;
+			children = (
+				133D742D1FEA976377187DE5 /* TodolooTests.swift */,
+			);
+			path = TodolooTests;
+			sourceTree = "<group>";
+		};
+		9E4830AA860294B7AA6678DA /* Todoloo */ = {
+			isa = PBXGroup;
+			children = (
+				DB9294F59B31C85E453EFAB6 /* Assets.xcassets */,
+				C2175E1D7916570A96C319B6 /* Todoloo.entitlements */,
+				0D29F0AE2048E839A284852F /* TodolooApp.swift */,
+				19C3D35FF0A8308B23832B7A /* Models */,
+				AB2F7AE30116E22ECDB2F2F8 /* Views */,
+			);
+			path = Todoloo;
+			sourceTree = "<group>";
+		};
+		AB2F7AE30116E22ECDB2F2F8 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				8CAD3D23D3EB0E78027841E6 /* ContentView.swift */,
+				15D4A28785FA70F0E9C2E5C9 /* SidebarView.swift */,
+				4A8FEB49EA048B12C5B13761 /* TodoInspectorView.swift */,
+				82A732502D7D62C00151128D /* TodoListView.swift */,
+				3EEF06BCA3B933297C0956B7 /* TodoRowView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3D451F9009BD889F396BC63E /* Todoloo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F9AE781E01ED191BA5F13E85 /* Build configuration list for PBXNativeTarget "Todoloo" */;
+			buildPhases = (
+				DD939F160536AA084C1EDB83 /* Sources */,
+				CEC52E563A5ABCD256CA2033 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Todoloo;
+			packageProductDependencies = (
+			);
+			productName = Todoloo;
+			productReference = 1B3F149BE317EFCE9B306CA3 /* Todoloo.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D0C7D917AEE2E05ECA4CB8C6 /* TodolooTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6B355F8D05861EFED103D680 /* Build configuration list for PBXNativeTarget "TodolooTests" */;
+			buildPhases = (
+				974099DCEC4ECAD5E0BC3E9B /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				19030FDF22CAEA4630382FE8 /* PBXTargetDependency */,
+			);
+			name = TodolooTests;
+			packageProductDependencies = (
+			);
+			productName = TodolooTests;
+			productReference = BEF9F634A5E2EF0C3007FB75 /* TodolooTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		77CF20365835404246BE20CF /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 04D892BD4A032B3A455E7512 /* Build configuration list for PBXProject "Todoloo" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 1B5165C8A899C5199124415E;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 2AFA0A528B7F5A98817DF08B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3D451F9009BD889F396BC63E /* Todoloo */,
+				D0C7D917AEE2E05ECA4CB8C6 /* TodolooTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		CEC52E563A5ABCD256CA2033 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4C50A04BB9A900DD7C94497F /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		974099DCEC4ECAD5E0BC3E9B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AD7A3D0F1F882FCF0B726634 /* TodolooTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DD939F160536AA084C1EDB83 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				32F49375CE203E99395204B7 /* AppNotifications.swift in Sources */,
+				679694F6E3DBCEFBEB62135E /* ContentView.swift in Sources */,
+				D835A2C493C9A9B79E0C4309 /* ReminderScheduler.swift in Sources */,
+				1BE98CDD5D3C50D796D52A2A /* SidebarView.swift in Sources */,
+				1AA93A7DB7DF7AC245E609D7 /* TodoFilter.swift in Sources */,
+				272DCC454D67EFE20338CB06 /* TodoInspectorView.swift in Sources */,
+				8888388FF09B8000045D0E68 /* TodoItem.swift in Sources */,
+				526D609E0F4F80C0B172F747 /* TodoListView.swift in Sources */,
+				AAADCB4A8CF4AA17CA73707A /* TodoRowView.swift in Sources */,
+				086AD4A7958BCEB56C05B389 /* TodolooApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		19030FDF22CAEA4630382FE8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3D451F9009BD889F396BC63E /* Todoloo */;
+			targetProxy = B370E5372E4B496AC06C95FC /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		31837933DD39068183E41F5A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Todoloo/Todoloo.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Todoloo;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026";
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.todoloo.app;
+				PRODUCT_NAME = Todoloo;
+				SDKROOT = macosx;
+				SWIFT_STRICT_CONCURRENCY = complete;
+			};
+			name = Debug;
+		};
+		5CFB23339916ABA259CEFC30 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Todoloo/Todoloo.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Todoloo;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026";
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.todoloo.app;
+				PRODUCT_NAME = Todoloo;
+				SDKROOT = macosx;
+				SWIFT_STRICT_CONCURRENCY = complete;
+			};
+			name = Release;
+		};
+		A0A4DB8B11B3A6D2304C25C4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.todoloo.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Todoloo.app/Contents/MacOS/Todoloo";
+			};
+			name = Debug;
+		};
+		AA91BB835494A5AB4E994E4D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		B1C3D067C6B0812D62C78235 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		D229FC6012B7581642024F2B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.todoloo.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Todoloo.app/Contents/MacOS/Todoloo";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		04D892BD4A032B3A455E7512 /* Build configuration list for PBXProject "Todoloo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA91BB835494A5AB4E994E4D /* Debug */,
+				B1C3D067C6B0812D62C78235 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		6B355F8D05861EFED103D680 /* Build configuration list for PBXNativeTarget "TodolooTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A0A4DB8B11B3A6D2304C25C4 /* Debug */,
+				D229FC6012B7581642024F2B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F9AE781E01ED191BA5F13E85 /* Build configuration list for PBXNativeTarget "Todoloo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				31837933DD39068183E41F5A /* Debug */,
+				5CFB23339916ABA259CEFC30 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 77CF20365835404246BE20CF /* Project object */;
+}
