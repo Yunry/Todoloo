@@ -42,3 +42,7 @@ open DerivedData/Build/Products/Debug/Todoloo.app --args --demo
 Demo tasks are never written to the persistent task store and do not schedule system notifications. Quit and launch normally to return to your own tasks.
 
 `project.yml` is the XcodeGen source (`xcodegen generate`). The checked-in Xcode project works without XcodeGen. `scripts/GenerateAppIcon.swift` regenerates the app icon using AppKit vector drawing.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
