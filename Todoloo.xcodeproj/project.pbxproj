@@ -12,13 +12,16 @@
 		1BE98CDD5D3C50D796D52A2A /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15D4A28785FA70F0E9C2E5C9 /* SidebarView.swift */; };
 		272DCC454D67EFE20338CB06 /* TodoInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A8FEB49EA048B12C5B13761 /* TodoInspectorView.swift */; };
 		32F49375CE203E99395204B7 /* AppNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66470675B19E08838C4567EF /* AppNotifications.swift */; };
+		41E59A88107EAD31C0D09F1C /* TaskCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C86176FDE1CD5BEF44841D0C /* TaskCalendar.swift */; };
 		4C50A04BB9A900DD7C94497F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DB9294F59B31C85E453EFAB6 /* Assets.xcassets */; };
+		4C80EBAA82A33FB769B20CDD /* TaskCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3A336F6398EDC2AEBA1351 /* TaskCalendarView.swift */; };
 		526D609E0F4F80C0B172F747 /* TodoListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82A732502D7D62C00151128D /* TodoListView.swift */; };
 		679694F6E3DBCEFBEB62135E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CAD3D23D3EB0E78027841E6 /* ContentView.swift */; };
 		8888388FF09B8000045D0E68 /* TodoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A906133488EAD3B6F3653A /* TodoItem.swift */; };
 		AAADCB4A8CF4AA17CA73707A /* TodoRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EEF06BCA3B933297C0956B7 /* TodoRowView.swift */; };
 		AD7A3D0F1F882FCF0B726634 /* TodolooTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 133D742D1FEA976377187DE5 /* TodolooTests.swift */; };
 		D835A2C493C9A9B79E0C4309 /* ReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB2D980E3C03848674F33D86 /* ReminderScheduler.swift */; };
+		EF029B0B09C67382005CDEC6 /* DayPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6B50E65324FC49288BD72DC /* DayPlan.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,11 +43,14 @@
 		42AFBDE4E55FAAE7CCDAD07B /* TodoFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoFilter.swift; sourceTree = "<group>"; };
 		4A8FEB49EA048B12C5B13761 /* TodoInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoInspectorView.swift; sourceTree = "<group>"; };
 		66470675B19E08838C4567EF /* AppNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNotifications.swift; sourceTree = "<group>"; };
+		7B3A336F6398EDC2AEBA1351 /* TaskCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCalendarView.swift; sourceTree = "<group>"; };
 		82A732502D7D62C00151128D /* TodoListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListView.swift; sourceTree = "<group>"; };
 		8CAD3D23D3EB0E78027841E6 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A6B50E65324FC49288BD72DC /* DayPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayPlan.swift; sourceTree = "<group>"; };
 		B2A906133488EAD3B6F3653A /* TodoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItem.swift; sourceTree = "<group>"; };
 		BEF9F634A5E2EF0C3007FB75 /* TodolooTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TodolooTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C2175E1D7916570A96C319B6 /* Todoloo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Todoloo.entitlements; sourceTree = "<group>"; };
+		C86176FDE1CD5BEF44841D0C /* TaskCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCalendar.swift; sourceTree = "<group>"; };
 		DB9294F59B31C85E453EFAB6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		FB2D980E3C03848674F33D86 /* ReminderScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderScheduler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -54,7 +60,9 @@
 			isa = PBXGroup;
 			children = (
 				66470675B19E08838C4567EF /* AppNotifications.swift */,
+				A6B50E65324FC49288BD72DC /* DayPlan.swift */,
 				FB2D980E3C03848674F33D86 /* ReminderScheduler.swift */,
+				C86176FDE1CD5BEF44841D0C /* TaskCalendar.swift */,
 				42AFBDE4E55FAAE7CCDAD07B /* TodoFilter.swift */,
 				B2A906133488EAD3B6F3653A /* TodoItem.swift */,
 			);
@@ -104,6 +112,7 @@
 			children = (
 				8CAD3D23D3EB0E78027841E6 /* ContentView.swift */,
 				15D4A28785FA70F0E9C2E5C9 /* SidebarView.swift */,
+				7B3A336F6398EDC2AEBA1351 /* TaskCalendarView.swift */,
 				4A8FEB49EA048B12C5B13761 /* TodoInspectorView.swift */,
 				82A732502D7D62C00151128D /* TodoListView.swift */,
 				3EEF06BCA3B933297C0956B7 /* TodoRowView.swift */,
@@ -207,8 +216,11 @@
 			files = (
 				32F49375CE203E99395204B7 /* AppNotifications.swift in Sources */,
 				679694F6E3DBCEFBEB62135E /* ContentView.swift in Sources */,
+				EF029B0B09C67382005CDEC6 /* DayPlan.swift in Sources */,
 				D835A2C493C9A9B79E0C4309 /* ReminderScheduler.swift in Sources */,
 				1BE98CDD5D3C50D796D52A2A /* SidebarView.swift in Sources */,
+				41E59A88107EAD31C0D09F1C /* TaskCalendar.swift in Sources */,
+				4C80EBAA82A33FB769B20CDD /* TaskCalendarView.swift in Sources */,
 				1AA93A7DB7DF7AC245E609D7 /* TodoFilter.swift in Sources */,
 				272DCC454D67EFE20338CB06 /* TodoInspectorView.swift in Sources */,
 				8888388FF09B8000045D0E68 /* TodoItem.swift in Sources */,
@@ -236,7 +248,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Todoloo/Todoloo.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Todoloo;
@@ -248,7 +260,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.todoloo.app;
 				PRODUCT_NAME = Todoloo;
 				SDKROOT = macosx;
@@ -263,7 +275,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Todoloo/Todoloo.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Todoloo;
@@ -275,7 +287,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.todoloo.app;
 				PRODUCT_NAME = Todoloo;
 				SDKROOT = macosx;

@@ -20,7 +20,7 @@ struct SidebarView: View {
                 .foregroundStyle(Palette.ink)
                 .padding(.horizontal, 20).padding(.top, 22).padding(.bottom, 36)
                 caption("YOUR SPACE")
-                ForEach([TodoFilter.today, .upcoming, .all, .important, .completed]) { item in
+                ForEach([TodoFilter.today, .calendar, .upcoming, .all, .important, .completed]) { item in
                     navigationRow(item, now: context.date)
                 }
                 caption("MY LISTS").padding(.top, 28)
@@ -62,7 +62,7 @@ struct SidebarView: View {
                     .foregroundStyle(item == .personal ? Color.orange : item == .work ? Color.blue : Palette.green)
                 Text(item.title).font(.system(size: 13, weight: filter == item ? .semibold : .regular))
                 Spacer()
-                if count > 0 {
+                if count > 0 && item != .calendar {
                     Text("\(count)").font(.system(size: 11, weight: .medium)).monospacedDigit()
                         .foregroundStyle(filter == item ? Palette.green : .secondary)
                 }

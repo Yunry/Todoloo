@@ -10,7 +10,7 @@ struct TodoInspectorView: View {
     var body: some View {
         Group {
             if let item = items.first(where: { $0.persistentModelID == itemID }) {
-                TaskDetailsForm(item: item)
+                TaskDetailsForm(item: item, otherItems: items)
             } else {
                 VStack(spacing: 14) {
                     Image(systemName: "text.alignleft").font(.system(size: 28, weight: .ultraLight))
@@ -27,6 +27,7 @@ struct TodoInspectorView: View {
 
 private struct TaskDetailsForm: View {
     @Bindable var item: TodoItem
+    let otherItems: [TodoItem]
     @Environment(\.modelContext) private var modelContext
     @State private var saveError: String?
     @EnvironmentObject private var reminders: ReminderScheduler
@@ -118,6 +119,29 @@ private struct TaskDetailsForm: View {
                                 .tint(item.durationMinutes == minutes ? Palette.green : .secondary)
                             }
                         }.buttonStyle(.bordered).controlSize(.small)
+                    }
+                    if let interval = item.plannedInterval() {
+                        let finishDay = Calendar.current.isDate(interval.start, inSameDayAs: interval.end)
+                            ? "" : " · \(interval.end.formatted(.dateTime.month(.abbreviated).day()))"
+                        Label("Estimated finish: \(interval.end.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute()))\(finishDay)",
+                              systemImage: "flag.checkered")
+                            .foregroundStyle(.secondary)
+                        let conflicts = otherItems.filter { item.overlaps($0) }
+                        if !conflicts.isEmpty {
+                            VStack(alignment: .leading, spacing: 5) {
+                                Label("Overlapping plans", systemImage: "exclamationmark.triangle")
+                                    .fontWeight(.medium)
+                                ForEach(conflicts) { other in
+                                    Text("\(other.title) · \(other.plannedTimeLabel() ?? "")")
+                                }
+                                Text("Adjust a start time or estimate to leave room.")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .font(.system(size: 11))
+                            .padding(10)
+                            .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+                            .accessibilityElement(children: .combine)
+                        }
                     }
                 }.font(.system(size: 12))
                 Divider()

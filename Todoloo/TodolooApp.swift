@@ -6,11 +6,13 @@ import SwiftUI
 struct TodolooApp: App {
     @NSApplicationDelegateAdaptor(TodolooAppDelegate.self) private var appDelegate
     private let demo = ProcessInfo.processInfo.arguments.contains("--demo")
+    private let testing = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+        || NSClassFromString("XCTestCase") != nil
     var body: some Scene {
         Window("Todoloo", id: "main") {
             ContentView()
         }
-        .modelContainer(for: TodoItem.self, inMemory: demo, isUndoEnabled: true) { result in
+        .modelContainer(for: TodoItem.self, inMemory: demo || testing, isUndoEnabled: true) { result in
             if demo, case .success(let container) = result {
                 let context = container.mainContext
                 let examples: [(String, String, Int, Bool, Bool)] = [
@@ -29,6 +31,10 @@ struct TodolooApp: App {
                     task.isImportant = example.3
                     task.setCompleted(example.4)
                     task.createdAt = .now.addingTimeInterval(Double(-index * 60))
+                    if index == 0 { task.setStartTime(12 * 60 + 15); task.durationMinutes = 30 }
+                    if index == 1 { task.durationMinutes = 45 }
+                    if index == 2 { task.setStartTime(9 * 60); task.durationMinutes = 60 }
+                    if index == 3 { task.setStartTime(9 * 60 + 45); task.durationMinutes = 30 }
                     if index == 2 { task.notes = "A fresh pair of eyes always helps. Include the latest mockups and a short summary of what changed." }
                     context.insert(task)
                 }

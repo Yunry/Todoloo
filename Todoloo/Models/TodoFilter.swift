@@ -1,11 +1,12 @@
 import SwiftUI
 
 enum TodoFilter: String, CaseIterable, Identifiable, Hashable {
-    case today, upcoming, all, important, completed, personal, work
+    case today, calendar, upcoming, all, important, completed, personal, work
     var id: String { rawValue }
     var title: String {
         switch self {
         case .today: "Today"
+        case .calendar: "Calendar"
         case .upcoming: "Upcoming"
         case .all: "All tasks"
         case .important: "Important"
@@ -17,6 +18,7 @@ enum TodoFilter: String, CaseIterable, Identifiable, Hashable {
     var systemImage: String {
         switch self {
         case .today: "sun.max"
+        case .calendar: "calendar.day.timeline.left"
         case .upcoming: "calendar"
         case .all: "tray"
         case .important: "flag"
@@ -28,6 +30,7 @@ enum TodoFilter: String, CaseIterable, Identifiable, Hashable {
     var subtitle: String {
         switch self {
         case .today: "A little focus. A lighter day."
+        case .calendar: "Make room for what matters."
         case .upcoming: "Give tomorrow a little breathing room."
         case .all: "Everything on your mind, in one place."
         case .important: "Make space for what matters most."
@@ -47,6 +50,7 @@ enum TodoFilter: String, CaseIterable, Identifiable, Hashable {
             guard let due = item.dueDate else { return false }
             return !item.isCompleted && due >= tomorrow
         case .all: return true
+        case .calendar: return !item.isCompleted
         case .important: return item.isImportant
         case .completed: return item.isCompleted
         case .personal: return item.listName == "Personal"

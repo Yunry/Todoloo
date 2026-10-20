@@ -11,6 +11,7 @@ struct TodoListView: View {
     @State private var draft = ""
     @State private var searchText = ""
     @AppStorage("taskSort") private var sort: TaskSort = .newest
+    @AppStorage("showDayPlan") private var showDayPlan = true
     @State private var showCompleted = true
     @State private var saveError: String?
     @FocusState private var focus: Field?
@@ -30,6 +31,7 @@ struct TodoListView: View {
             let active = matching.filter { !$0.isCompleted }
             let completed = matching.filter(\.isCompleted)
             let todayItems = items.filter { TodoFilter.today.includes($0, now: context.date) }
+            let plan = filter == .today ? DayPlan(items: items, date: context.date) : nil
             VStack(alignment: .leading, spacing: 0) {
                 topBar
                 ScrollView {
@@ -39,12 +41,19 @@ struct TodoListView: View {
                             progressCard(active: todayItems.filter { !$0.isCompleted }.count, completed: todayItems.filter(\.isCompleted).count)
                         }
                         if filter != .completed { composer }
+                        if let plan {
+                            planningBar(plan)
+                        }
                         if matching.isEmpty {
                             emptyState
                         } else {
                             VStack(spacing: 18) {
                                 if !active.isEmpty {
-                                    taskSection(active, title: filter == .today ? "ON YOUR MIND" : "TO DO", now: context.date)
+                                    if let plan, showDayPlan {
+                                        agenda(plan, matching: active, now: context.date)
+                                    } else {
+                                        taskSection(active, title: filter == .today ? "ON YOUR MIND" : "TO DO", now: context.date)
+                                    }
                                 }
                                 if !completed.isEmpty {
                                     VStack(spacing: 8) {
@@ -130,15 +139,74 @@ struct TodoListView: View {
                 Text(filter.title).font(.system(size: 38, weight: .regular, design: .serif))
                     .tracking(-1.2).foregroundStyle(Palette.ink)
                 Spacer()
-                Menu {
-                    Picker("Sort tasks", selection: $sort) {
-                        ForEach(TaskSort.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                } label: { Label("Sort", systemImage: "arrow.up.arrow.down") }
-                    .menuStyle(.borderlessButton).fixedSize().font(.system(size: 12))
-                    .help("Sort tasks: \(sort.rawValue)")
+                if filter != .today || !showDayPlan {
+                    Menu {
+                        Picker("Sort tasks", selection: $sort) {
+                            ForEach(TaskSort.allCases) { Text($0.rawValue).tag($0) }
+                        }
+                    } label: { Label("Sort", systemImage: "arrow.up.arrow.down") }
+                        .menuStyle(.borderlessButton).fixedSize().font(.system(size: 12))
+                        .help("Sort tasks: \(sort.rawValue)")
+                }
             }
             Text(filter.subtitle).font(.system(size: 13)).foregroundStyle(.secondary)
+        }
+    }
+
+    private func planningBar(_ plan: DayPlan) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Picker("Today layout", selection: $showDayPlan) {
+                Text("Day plan").tag(true)
+                Text("List").tag(false)
+            }
+            .pickerStyle(.segmented).labelsHidden().frame(width: 190)
+            .accessibilityLabel("Today layout")
+            if showDayPlan && (!plan.scheduled.isEmpty || !plan.flexible.isEmpty) {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "clock").foregroundStyle(Palette.green)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("\(TodoItem.estimateLabel(plan.estimatedMinutes)) estimated for today")
+                            .font(.system(size: 12, weight: .medium)).foregroundStyle(Palette.ink)
+                        Text(plan.missingEstimates == 0
+                             ? "Across \(plan.scheduled.count + plan.flexible.count) unfinished tasks."
+                             : "\(plan.missingEstimates) \(plan.missingEstimates == 1 ? "task has" : "tasks have") no estimate yet.")
+                            .font(.system(size: 11)).foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(12).background(Palette.sidebar.opacity(0.65), in: RoundedRectangle(cornerRadius: 9))
+                .accessibilityElement(children: .combine)
+            }
+        }
+    }
+
+    private func agenda(_ plan: DayPlan, matching: [TodoItem], now: Date) -> some View {
+        let ids = Set(matching.map(\.persistentModelID))
+        let overdue = plan.overdue.filter { ids.contains($0.persistentModelID) }
+        let scheduled = plan.scheduled.filter { ids.contains($0.persistentModelID) }
+        let flexible = plan.flexible.filter { ids.contains($0.persistentModelID) }
+        return VStack(alignment: .leading, spacing: 22) {
+            if !overdue.isEmpty { taskSection(overdue, title: "TO CATCH UP ON", now: now) }
+            if !scheduled.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("YOUR SCHEDULE").tracking(1.3)
+                        .font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
+                    LazyVStack(spacing: 4) {
+                        ForEach(scheduled) { item in
+                            VStack(alignment: .leading, spacing: 0) {
+                                taskRow(item, now: now)
+                                if plan.overlappingIDs.contains(item.persistentModelID) {
+                                    Label("Overlaps another task · check details", systemImage: "exclamationmark.triangle")
+                                        .font(.system(size: 10)).foregroundStyle(.secondary)
+                                        .padding(.leading, 52).padding(.bottom, 10)
+                                }
+                            }
+                            .background(Palette.card, in: RoundedRectangle(cornerRadius: 9))
+                        }
+                    }
+                }
+            }
+            if !flexible.isEmpty { taskSection(flexible, title: "FLEXIBLE TIME", now: now) }
         }
     }
 
@@ -200,6 +268,12 @@ struct TodoListView: View {
     private func rows(_ tasks: [TodoItem], now: Date) -> some View {
         LazyVStack(spacing: 3) {
             ForEach(tasks) { item in
+                taskRow(item, now: now)
+            }
+        }
+    }
+
+    private func taskRow(_ item: TodoItem, now: Date) -> some View {
                 TodoRowView(item: item, isSelected: selectedItemID == item.persistentModelID, now: now) {
                     selectedItemID = item.persistentModelID
                     showingInspector = true
@@ -217,8 +291,6 @@ struct TodoListView: View {
                     Divider()
                     Button("Delete task", role: .destructive) { delete(item) }
                 }
-            }
-        }
     }
 
     private var emptyState: some View {

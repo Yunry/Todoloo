@@ -51,10 +51,7 @@ final class TodoItem {
 
     var durationLabel: String? {
         guard let minutes = durationMinutes, minutes > 0 else { return nil }
-        let hours = minutes / 60
-        let remainder = minutes % 60
-        if hours == 0 { return "\(minutes) min" }
-        return remainder == 0 ? "\(hours) hr" : "\(hours) hr \(remainder) min"
+        return Self.estimateLabel(minutes)
     }
 
     /// Only an explicit duration at the end is interpreted; other parentheses remain part of the title.

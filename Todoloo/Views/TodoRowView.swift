@@ -33,7 +33,7 @@ struct TodoRowView: View {
                             Text(item.listName)
                         }
                         if let dueDate = item.dueDate {
-                            Label(dateLabel(dueDate) + (item.startTimeLabel.map { " · " + $0 } ?? ""), systemImage: "calendar")
+                            Label(dateLabel(dueDate) + (item.plannedTimeLabel().map { " · " + $0 } ?? ""), systemImage: "calendar")
                                 .foregroundStyle(item.isOverdue(relativeTo: now) ? Color(red: 0.75, green: 0.31, blue: 0.22) : .secondary)
                         }
                         if let duration = item.durationLabel {

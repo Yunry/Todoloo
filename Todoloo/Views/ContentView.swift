@@ -37,8 +37,13 @@ struct ContentView: View {
                 .navigationSplitViewColumnWidth(min: 210, ideal: 224, max: 260)
         } detail: {
             HStack(spacing: 0) {
-                TodoListView(filter: filter, selectedItemID: $selectedItemID, showingInspector: $showingInspector)
-                    .frame(minWidth: 460, maxWidth: .infinity)
+                Group {
+                    if filter == .calendar {
+                        TaskCalendarView(selectedItemID: $selectedItemID, showingInspector: $showingInspector)
+                    } else {
+                        TodoListView(filter: filter, selectedItemID: $selectedItemID, showingInspector: $showingInspector)
+                    }
+                }.frame(minWidth: 460, maxWidth: .infinity)
                 if showingInspector {
                     Divider()
                     TodoInspectorView(itemID: selectedItemID)
