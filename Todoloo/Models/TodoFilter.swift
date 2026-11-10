@@ -1,8 +1,23 @@
 import SwiftUI
 
-enum TodoFilter: String, CaseIterable, Identifiable, Hashable {
+enum TodoFilter: Identifiable, Hashable {
     case today, calendar, upcoming, all, important, completed, personal, work
-    var id: String { rawValue }
+    case custom(String)
+    var id: String {
+        if case .custom(let name) = self { return "list:" + name }
+        return String(describing: self)
+    }
+    var listName: String? {
+        switch self {
+        case .personal: "Personal"
+        case .work: "Work"
+        case .custom(let name): name
+        default: nil
+        }
+    }
+    static func list(_ name: String) -> TodoFilter {
+        name == "Personal" ? .personal : name == "Work" ? .work : .custom(name)
+    }
     var title: String {
         switch self {
         case .today: "Today"
@@ -13,6 +28,7 @@ enum TodoFilter: String, CaseIterable, Identifiable, Hashable {
         case .completed: "Completed"
         case .personal: "Personal"
         case .work: "Work"
+        case .custom(let name): name
         }
     }
     var systemImage: String {
@@ -25,6 +41,7 @@ enum TodoFilter: String, CaseIterable, Identifiable, Hashable {
         case .completed: "checkmark.circle"
         case .personal: "person"
         case .work: "briefcase"
+        case .custom: "list.bullet"
         }
     }
     var subtitle: String {
@@ -37,6 +54,7 @@ enum TodoFilter: String, CaseIterable, Identifiable, Hashable {
         case .completed: "Small steps. Real progress."
         case .personal: "A little space for your everyday life."
         case .work: "Good work starts with a clear head."
+        case .custom: "Your tasks, together."
         }
     }
     func includes(_ item: TodoItem, now: Date = .now) -> Bool {
@@ -55,6 +73,7 @@ enum TodoFilter: String, CaseIterable, Identifiable, Hashable {
         case .completed: return item.isCompleted
         case .personal: return item.listName == "Personal"
         case .work: return item.listName == "Work"
+        case .custom(let name): return item.listName == name
         }
     }
 }

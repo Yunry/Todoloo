@@ -18,16 +18,33 @@ enum CalendarPlacement {
         return Int((min(max(minute, 0), 1425) / 15).rounded()) * 15
     }
 
-    /// Validate before mutating so nonexistent spring-forward slots leave the original plan intact.
-    @discardableResult
-    static func move(_ item: TodoItem, to day: Date, minute: Int, calendar: Calendar = .current) -> Bool {
+    static func start(on day: Date, minute: Int, calendar: Calendar = .current) -> Date? {
         let snapped = snappedMinute(Double(minute))
         let date = calendar.startOfDay(for: day)
         guard let start = calendar.date(bySettingHour: snapped / 60, minute: snapped % 60, second: 0,
                                        of: date, matchingPolicy: .strict, repeatedTimePolicy: .first),
-              calendar.isDate(start, inSameDayAs: date) else { return false }
-        item.dueDate = date
-        item.setStartTime(snapped)
+              calendar.isDate(start, inSameDayAs: date) else { return nil }
+        return start
+    }
+
+    /// Match the calendar's 30-minute placeholder when a task has no estimate.
+    static func conflicts(for item: TodoItem, on day: Date, minute: Int, among items: [TodoItem],
+                          calendar: Calendar = .current) -> [TodoItem] {
+        guard let start = start(on: day, minute: minute, calendar: calendar) else { return [] }
+        let end = start.addingTimeInterval(Double(max(item.durationMinutes ?? 30, 1)) * 60)
+        return items.filter { other in
+            guard other !== item, !other.isCompleted, let otherStart = other.scheduledStart(calendar: calendar) else { return false }
+            let otherEnd = otherStart.addingTimeInterval(Double(max(other.durationMinutes ?? 30, 1)) * 60)
+            return start < otherEnd && otherStart < end
+        }.sorted { ($0.scheduledStart(calendar: calendar) ?? .distantFuture) < ($1.scheduledStart(calendar: calendar) ?? .distantFuture) }
+    }
+
+    /// Validate before mutating so nonexistent spring-forward slots leave the original plan intact.
+    @discardableResult
+    static func move(_ item: TodoItem, to day: Date, minute: Int, calendar: Calendar = .current) -> Bool {
+        guard start(on: day, minute: minute, calendar: calendar) != nil else { return false }
+        item.dueDate = calendar.startOfDay(for: day)
+        item.setStartTime(snappedMinute(Double(minute)))
         return true
     }
 }

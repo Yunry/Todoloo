@@ -1,6 +1,12 @@
 import Foundation
 import SwiftData
 
+struct ChecklistEntry: Codable, Equatable, Identifiable {
+    var id = UUID()
+    var title: String
+    var isCompleted = false
+}
+
 @Model
 final class TodoItem {
     var title: String
@@ -15,6 +21,61 @@ final class TodoItem {
     var startMinuteOfDay: Int? = nil
     var remindersEnabled: Bool = true
     var reminderIdentifier: String? = nil
+    // Optional storage allows existing task stores to migrate without losing data.
+    var checklistData: Data? = nil
+    var isFixedTime: Bool = false
+    var routineRuleRaw: String = "none"
+    var routineCompletionCount: Int = 0
+    var lastRoutineCompletedAt: Date? = nil
+
+    var routineRule: RoutineRule { RoutineRule(rawValue: routineRuleRaw) ?? .none }
+    func setRoutine(_ rule: RoutineRule) {
+        routineRuleRaw = rule.rawValue
+        if rule != .none && dueDate == nil { dueDate = Calendar.current.startOfDay(for: .now) }
+    }
+
+    @discardableResult
+    func advanceRoutine(completed: Bool, now: Date = .now, calendar: Calendar = .current) -> Bool {
+        guard !isCompleted, let next = routineRule.nextDate(for: self, now: now, calendar: calendar) else { return false }
+        dueDate = next
+        if completed { routineCompletionCount += 1; lastRoutineCompletedAt = now }
+        checklist = checklist.map { var step = $0; step.isCompleted = false; return step }
+        return true
+    }
+
+    var checklist: [ChecklistEntry] {
+        get { checklistData.flatMap { try? JSONDecoder().decode([ChecklistEntry].self, from: $0) } ?? [] }
+        set { checklistData = newValue.isEmpty ? nil : try? JSONEncoder().encode(newValue) }
+    }
+
+    var checklistProgress: String? {
+        let entries = checklist
+        guard !entries.isEmpty else { return nil }
+        return "\(entries.filter(\.isCompleted).count)/\(entries.count) steps"
+    }
+
+    func addChecklistEntries(_ text: String) {
+        let entries = text.components(separatedBy: .newlines).compactMap { line -> ChecklistEntry? in
+            let title = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            return title.isEmpty ? nil : ChecklistEntry(title: title)
+        }
+        if !entries.isEmpty { checklist += entries }
+    }
+
+    func updateChecklistEntry(_ id: UUID, title: String? = nil, completed: Bool? = nil) {
+        var entries = checklist
+        guard let index = entries.firstIndex(where: { $0.id == id }) else { return }
+        if let title, !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { entries[index].title = title }
+        if let completed { entries[index].isCompleted = completed }
+        checklist = entries
+    }
+
+    func removeChecklistEntry(_ id: UUID) { checklist = checklist.filter { $0.id != id } }
+
+    func matchesSearch(_ query: String) -> Bool {
+        query.isEmpty || title.localizedCaseInsensitiveContains(query) || notes.localizedCaseInsensitiveContains(query)
+            || checklist.contains { $0.title.localizedCaseInsensitiveContains(query) }
+    }
 
     static let startTimeOptions = Array(stride(from: 0, to: 1440, by: 15))
 
@@ -54,13 +115,14 @@ final class TodoItem {
         return Self.estimateLabel(minutes)
     }
 
-    /// Only an explicit duration at the end is interpreted; other parentheses remain part of the title.
-    static func parseDraft(_ draft: String) -> (title: String, durationMinutes: Int?, startMinuteOfDay: Int?) {
+    /// Recognize trailing scheduling tokens; leave unsupported tokens in the title.
+    static func parseDraft(_ draft: String) -> (title: String, durationMinutes: Int?, startMinuteOfDay: Int?, dateOffset: Int?) {
         var title = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         var duration: Int?
         var startMinute: Int?
+        var dateOffset: Int?
         // Accept either order: “Read (09:15) (30mins)” or “Read (30mins) (09:15)”.
-        for _ in 0..<2 {
+        for _ in 0..<3 {
             if duration == nil {
                 let parsed = parseDurationSuffix(title)
                 if let minutes = parsed.durationMinutes {
@@ -80,9 +142,20 @@ final class TodoItem {
                     continue
                 }
             }
+            if dateOffset == nil,
+               let range = title.range(of: #"\s+(?:\(\s*(?:today|tomorrow)\s*\)|today|tomorrow)\s*$"#,
+                                       options: [.regularExpression, .caseInsensitive]) {
+                let raw = title[range].trimmingCharacters(in: CharacterSet(charactersIn: "() \t\n")).lowercased()
+                let stripped = String(title[..<range.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+                if !stripped.isEmpty {
+                    dateOffset = raw == "tomorrow" ? 1 : 0
+                    title = stripped
+                    continue
+                }
+            }
             break
         }
-        return (title, duration, startMinute)
+        return (title, duration, startMinute, dateOffset)
     }
 
     private static func parseDurationSuffix(_ draft: String) -> (title: String, durationMinutes: Int?) {
@@ -116,6 +189,7 @@ final class TodoItem {
     }
 
     func setCompleted(_ completed: Bool) {
+        if completed && !isCompleted && advanceRoutine(completed: true) { return }
         isCompleted = completed
         completedAt = completed ? .now : nil
     }

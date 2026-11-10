@@ -5,13 +5,15 @@ struct TodoRowView: View {
     @Bindable var item: TodoItem
     var isSelected: Bool
     var now: Date
+    var listSymbol: String = "list.bullet"
     var openDetails: () -> Void
     @State private var isHovering = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: 12) {
             Button {
-                withAnimation(.easeInOut(duration: 0.18)) { item.setCompleted(!item.isCompleted) }
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.18)) { item.setCompleted(!item.isCompleted) }
             } label: {
                 Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 21, weight: .light))
@@ -28,8 +30,12 @@ struct TodoRowView: View {
                         .lineLimit(2).multilineTextAlignment(.leading)
                     HStack(spacing: 10) {
                         HStack(spacing: 5) {
-                            Circle().fill(item.listName == "Work" ? Color.blue.opacity(0.7) : Color.orange.opacity(0.7))
-                                .frame(width: 5, height: 5)
+                            if ListCatalog.builtIn.contains(item.listName) {
+                                Circle().fill(item.listName == "Work" ? Color.blue.opacity(0.7) : Color.orange.opacity(0.7))
+                                    .frame(width: 5, height: 5)
+                            } else {
+                                Image(systemName: listSymbol).foregroundStyle(Palette.green)
+                            }
                             Text(item.listName)
                         }
                         if let dueDate = item.dueDate {
@@ -41,6 +47,13 @@ struct TodoRowView: View {
                                 .fixedSize()
                                 .accessibilityLabel("Estimated time: \(duration)")
                         }
+                        if let progress = item.checklistProgress {
+                            Label(progress, systemImage: "checklist").help("Checklist progress")
+                        }
+                        if item.routineRule != .none {
+                            Image(systemName: "repeat").help(item.routineRule.label).accessibilityLabel(item.routineRule.label)
+                        }
+                        if item.isFixedTime { Image(systemName: "lock").help("Protected from schedule shifts") }
                         if !item.notes.isEmpty { Image(systemName: "text.alignleft").help("Has notes") }
                     }.font(.system(size: 10)).foregroundStyle(.secondary)
                 }

@@ -21,9 +21,11 @@ enum Palette {
 }
 
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
     @State private var filter: TodoFilter = .today
     @State private var selectedItemID: PersistentIdentifier?
     @State private var showingInspector = false
+    @State private var findTimeRequest: FindTimeRequest?
     @Query private var items: [TodoItem]
     @StateObject private var reminders = ReminderScheduler()
 
@@ -66,8 +68,17 @@ struct ContentView: View {
         .tint(Palette.green)
         .environmentObject(reminders)
         .frame(minWidth: showingInspector ? 1000 : 760, minHeight: 600)
+        .background(WindowUndoBridge(modelContext: modelContext).frame(width: 0, height: 0))
         .onReceive(NotificationCenter.default.publisher(for: .focusNewTodoField)) { _ in
             if filter == .completed { filter = .today }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .findTimeForTask)) { notification in
+            if let id = notification.object as? PersistentIdentifier { findTimeRequest = FindTimeRequest(id: id) }
+        }
+        .sheet(item: $findTimeRequest) { request in
+            if let item = items.first(where: { $0.persistentModelID == request.id }) {
+                FindTimeSheet(item: item)
+            }
         }
         .onChange(of: filter) { _, _ in selectedItemID = nil }
         .onChange(of: reminderPlans, initial: true) { _, plans in reminders.update(plans) }
@@ -83,6 +94,34 @@ struct ContentView: View {
     }
 }
 
+/// Bind model edits to the actual NSWindow manager used by Edit → Undo.
+/// A custom ModelContainer does not install this connection automatically.
+struct WindowUndoBridge: NSViewRepresentable {
+    let modelContext: ModelContext
+    func makeNSView(context: Context) -> LinkView {
+        let view = LinkView()
+        view.modelContext = modelContext
+        return view
+    }
+    func updateNSView(_ view: LinkView, context: Context) {
+        view.modelContext = modelContext
+        view.connect()
+    }
+    final class LinkView: NSView {
+        var modelContext: ModelContext?
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            connect()
+        }
+        func connect() {
+            guard let manager = window?.undoManager, let modelContext,
+                  modelContext.undoManager !== manager else { return }
+            modelContext.processPendingChanges()
+            modelContext.undoManager = manager
+        }
+    }
+}
+
 #Preview {
-    ContentView().modelContainer(for: TodoItem.self, inMemory: true)
+    ContentView().modelContainer(for: [TodoItem.self, TaskList.self], inMemory: true)
 }

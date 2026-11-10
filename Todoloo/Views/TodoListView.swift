@@ -8,6 +8,7 @@ struct TodoListView: View {
     @Binding var showingInspector: Bool
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \TodoItem.createdAt, order: .reverse) private var items: [TodoItem]
+    @Query private var lists: [TaskList]
     @State private var draft = ""
     @State private var searchText = ""
     @AppStorage("taskSort") private var sort: TaskSort = .newest
@@ -15,13 +16,13 @@ struct TodoListView: View {
     @State private var showCompleted = true
     @State private var saveError: String?
     @FocusState private var focus: Field?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private enum Field { case composer, search }
 
     private func matchingItems(now: Date) -> [TodoItem] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         return sort.ordered(items.filter {
-            filter.includes($0, now: now) && (query.isEmpty || $0.title.localizedCaseInsensitiveContains(query)
-                || $0.notes.localizedCaseInsensitiveContains(query))
+            filter.includes($0, now: now) && $0.matchesSearch(query)
         })
     }
 
@@ -58,7 +59,7 @@ struct TodoListView: View {
                                 if !completed.isEmpty {
                                     VStack(spacing: 8) {
                                         Button {
-                                            withAnimation(.easeInOut(duration: 0.2)) { showCompleted.toggle() }
+                                            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { showCompleted.toggle() }
                                         } label: {
                                             HStack(spacing: 8) {
                                                 Image(systemName: showCompleted ? "chevron.down" : "chevron.right")
@@ -113,7 +114,7 @@ struct TodoListView: View {
 
     private var topBar: some View {
         HStack {
-            Label(filter.title, systemImage: filter.systemImage)
+            Label(filter.title, systemImage: filter.listName.map { ListCatalog.symbol(for: $0, lists: lists) } ?? filter.systemImage)
                 .font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
             Spacer(minLength: 16)
             HStack(spacing: 7) {
@@ -234,24 +235,40 @@ struct TodoListView: View {
     }
 
     private var composer: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "plus").font(.system(size: 17, weight: .light)).foregroundStyle(Palette.green)
-            TextField("What would you like to get done?", text: $draft)
-                .font(.system(size: 14)).textFieldStyle(.plain)
-                .focused($focus, equals: .composer).onSubmit(addTodo)
-                .accessibilityLabel("New task")
-                .help("Try: Read a chapter (09:15) (30mins). Start times use 15-minute steps.")
-            Button(action: addTodo) {
-                Image(systemName: "arrow.up").font(.system(size: 12, weight: .semibold))
-                    .frame(width: 27, height: 27)
-                    .foregroundStyle(Palette.background)
-                    .background(Palette.green, in: RoundedRectangle(cornerRadius: 7))
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
+                Image(systemName: "plus").font(.system(size: 17, weight: .light)).foregroundStyle(Palette.green)
+                TextField("What would you like to get done?", text: $draft)
+                    .font(.system(size: 14)).textFieldStyle(.plain)
+                    .focused($focus, equals: .composer).onSubmit(addTodo)
+                    .accessibilityLabel("New task")
+                    .help("Try: Read tomorrow (09:15) (30mins). Today and tomorrow are recognized at the end; times use 15-minute steps.")
+                Button(action: addTodo) {
+                    Image(systemName: "arrow.up").font(.system(size: 12, weight: .semibold))
+                        .frame(width: 27, height: 27)
+                        .foregroundStyle(Palette.background)
+                        .background(Palette.green, in: RoundedRectangle(cornerRadius: 7))
+                }
+                .buttonStyle(.plain).help("Add task (Return)").accessibilityLabel("Add task")
+                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
-            .buttonStyle(.plain).help("Add task (Return)").accessibilityLabel("Add task")
-            .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .padding(14).background(Palette.card, in: RoundedRectangle(cornerRadius: 11))
+            .overlay(RoundedRectangle(cornerRadius: 11).stroke(focus == .composer ? Palette.green.opacity(0.6) : Palette.green.opacity(0.17), lineWidth: 1))
+            if let preview = draftPreview {
+                Label(preview, systemImage: "checkmark.circle")
+                    .font(.system(size: 11)).foregroundStyle(Palette.green).padding(.horizontal, 4)
+                    .accessibilityLabel("Quick entry preview: " + preview)
+            }
         }
-        .padding(14).background(Palette.card, in: RoundedRectangle(cornerRadius: 11))
-        .overlay(RoundedRectangle(cornerRadius: 11).stroke(focus == .composer ? Palette.green.opacity(0.6) : Palette.green.opacity(0.17), lineWidth: 1))
+    }
+
+    private var draftPreview: String? {
+        let parsed = TodoItem.parseDraft(draft)
+        var parts: [String] = []
+        if let offset = parsed.dateOffset { parts.append(offset == 0 ? "Today" : "Tomorrow") }
+        if let minute = parsed.startMinuteOfDay { parts.append(TodoItem.timeLabel(minute)) }
+        if let duration = parsed.durationMinutes { parts.append(TodoItem.estimateLabel(duration)) }
+        return parts.isEmpty ? nil : "Will add: " + parsed.title + " · " + parts.joined(separator: " · ")
     }
 
     private func taskSection(_ tasks: [TodoItem], title: String, now: Date) -> some View {
@@ -274,17 +291,25 @@ struct TodoListView: View {
     }
 
     private func taskRow(_ item: TodoItem, now: Date) -> some View {
-                TodoRowView(item: item, isSelected: selectedItemID == item.persistentModelID, now: now) {
+                TodoRowView(item: item, isSelected: selectedItemID == item.persistentModelID, now: now,
+                            listSymbol: ListCatalog.symbol(for: item.listName, lists: lists)) {
                     selectedItemID = item.persistentModelID
                     showingInspector = true
                 }
                 .contextMenu {
+                    if !item.isCompleted {
+                        Button("Find a fit…") { NotificationCenter.default.post(name: .findTimeForTask, object: item.persistentModelID) }
+                        if item.routineRule != .none { Button("Skip once") { item.advanceRoutine(completed: false) } }
+                    }
                     Button("Edit details") { selectedItemID = item.persistentModelID; showingInspector = true }
-                    Button(item.isCompleted ? "Mark incomplete" : "Complete task") { item.setCompleted(!item.isCompleted) }
+                    Button(item.isCompleted ? "Mark incomplete" : item.routineRule == .none ? "Complete task" : "Complete occurrence") { item.setCompleted(!item.isCompleted) }
                     Button(item.isImportant ? "Remove priority" : "Mark important") { item.isImportant.toggle() }
                     Menu("Move to") {
-                        Button("Personal") { item.listName = "Personal" }
-                        Button("Work") { item.listName = "Work" }
+                        ForEach(ListCatalog.names(lists: lists, items: items), id: \.self) { name in
+                            Button { item.listName = name } label: {
+                                Label(name, systemImage: ListCatalog.symbol(for: name, lists: lists))
+                            }
+                        }
                     }
                     Button("Due today") { item.dueDate = Calendar.current.startOfDay(for: .now) }
                     Button("Due tomorrow") { item.dueDate = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: .now)) }
@@ -328,8 +353,11 @@ struct TodoListView: View {
         item.durationMinutes = parsed.durationMinutes
         if filter == .today { item.dueDate = Calendar.current.startOfDay(for: .now) }
         if filter == .upcoming { item.dueDate = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: .now)) }
+        if let offset = parsed.dateOffset {
+            item.dueDate = Calendar.current.date(byAdding: .day, value: offset, to: Calendar.current.startOfDay(for: .now))
+        }
         if let start = parsed.startMinuteOfDay { item.setStartTime(start) }
-        item.listName = filter == .work ? "Work" : "Personal"
+        item.listName = filter.listName ?? "Personal"
         item.isImportant = filter == .important
         modelContext.insert(item)
         do {

@@ -11,3 +11,5 @@ DerivedData/
 timeline.xctimeline
 playground.xcworkspace
 .swiftpm/
+
+.local-backups/

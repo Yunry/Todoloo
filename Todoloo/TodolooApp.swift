@@ -5,42 +5,22 @@ import SwiftUI
 @main
 struct TodolooApp: App {
     @NSApplicationDelegateAdaptor(TodolooAppDelegate.self) private var appDelegate
-    private let demo = ProcessInfo.processInfo.arguments.contains("--demo")
-    private let testing = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-        || NSClassFromString("XCTestCase") != nil
+    private let storage: ModelContainer
+
+    init() {
+        let demo = ProcessInfo.processInfo.arguments.contains("--demo")
+        let testing = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || NSClassFromString("XCTestCase") != nil
+        do { storage = try TaskStore.make(inMemory: demo || testing) }
+        catch { fatalError("Couldn’t open saved Todoloo data: \(error)") }
+        if demo { seedDemo(in: storage.mainContext) }
+    }
+
     var body: some Scene {
         Window("Todoloo", id: "main") {
             ContentView()
         }
-        .modelContainer(for: TodoItem.self, inMemory: demo || testing, isUndoEnabled: true) { result in
-            if demo, case .success(let container) = result {
-                let context = container.mainContext
-                let examples: [(String, String, Int, Bool, Bool)] = [
-                    ("Make time for a little fresh air", "Personal", 0, false, false),
-                    ("Pick up something good for dinner", "Personal", 0, false, false),
-                    ("Send the first draft to the team", "Work", 0, true, false),
-                    ("Sketch a few ideas for the week", "Work", 0, false, false),
-                    ("A quiet coffee and a plan for the day", "Personal", 0, false, true),
-                    ("Book a table for Friday", "Personal", 2, false, false),
-                    ("Review the project timeline", "Work", 1, true, false)
-                ]
-                for (index, example) in examples.enumerated() {
-                    let task = TodoItem(title: example.0)
-                    task.listName = example.1
-                    task.dueDate = Calendar.current.date(byAdding: .day, value: example.2, to: Calendar.current.startOfDay(for: .now))
-                    task.isImportant = example.3
-                    task.setCompleted(example.4)
-                    task.createdAt = .now.addingTimeInterval(Double(-index * 60))
-                    if index == 0 { task.setStartTime(12 * 60 + 15); task.durationMinutes = 30 }
-                    if index == 1 { task.durationMinutes = 45 }
-                    if index == 2 { task.setStartTime(9 * 60); task.durationMinutes = 60 }
-                    if index == 3 { task.setStartTime(9 * 60 + 45); task.durationMinutes = 30 }
-                    if index == 2 { task.notes = "A fresh pair of eyes always helps. Include the latest mockups and a short summary of what changed." }
-                    context.insert(task)
-                }
-                try? context.save()
-            }
-        }
+        .modelContainer(storage)
         .defaultSize(width: 1050, height: 760)
         .windowStyle(.hiddenTitleBar)
         .commands {
@@ -48,6 +28,9 @@ struct TodolooApp: App {
                 Button("New Task") {
                     NotificationCenter.default.post(name: .focusNewTodoField, object: nil)
                 }.keyboardShortcut("n")
+                Button("New List") {
+                    NotificationCenter.default.post(name: .newTaskList, object: nil)
+                }.keyboardShortcut("n", modifiers: [.command, .shift])
             }
             CommandGroup(after: .textEditing) {
                 Button("Find Tasks") {
@@ -55,6 +38,33 @@ struct TodolooApp: App {
                 }.keyboardShortcut("f")
             }
         }
+    }
+
+    private func seedDemo(in context: ModelContext) {
+        let examples: [(String, String, Int, Bool, Bool)] = [
+            ("Make time for a little fresh air", "Personal", 0, false, false),
+            ("Pick up something good for dinner", "Personal", 0, false, false),
+            ("Send the first draft to the team", "Work", 0, true, false),
+            ("Sketch a few ideas for the week", "Work", 0, false, false),
+            ("A quiet coffee and a plan for the day", "Personal", 0, false, true),
+            ("Book a table for Friday", "Personal", 2, false, false),
+            ("Review the project timeline", "Work", 1, true, false)
+        ]
+        for (index, example) in examples.enumerated() {
+            let task = TodoItem(title: example.0)
+            task.listName = example.1
+            task.dueDate = Calendar.current.date(byAdding: .day, value: example.2, to: Calendar.current.startOfDay(for: .now))
+            task.isImportant = example.3
+            task.setCompleted(example.4)
+            task.createdAt = .now.addingTimeInterval(Double(-index * 60))
+            if index == 0 { task.setStartTime(12 * 60 + 15); task.durationMinutes = 30 }
+            if index == 1 { task.durationMinutes = 45 }
+            if index == 2 { task.setStartTime(9 * 60); task.durationMinutes = 60 }
+            if index == 3 { task.setStartTime(9 * 60 + 45); task.durationMinutes = 30 }
+            if index == 2 { task.notes = "A fresh pair of eyes always helps. Include the latest mockups and a short summary of what changed." }
+            context.insert(task)
+        }
+        try? context.save()
     }
 }
 

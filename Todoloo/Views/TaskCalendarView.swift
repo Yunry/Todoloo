@@ -11,10 +11,14 @@ struct TaskCalendarView: View {
     @State private var date = Calendar.current.startOfDay(for: Date.now)
     @State private var search = ""
     @State private var editor: CalendarEditRequest?
+    @State private var showingRunningLate = false
     @State private var error: String?
     @State private var feedback = "Drag tasks to plan your time. Double-click an empty slot to add one."
     @State private var showingFlexible = true
-    @State private var scrollHour: Int? = 8
+    @State private var scrollSlot: Int? = 32
+    @State private var scrollToNowRequest = 0
+    @StateObject private var drag = CalendarDragState()
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var searchFocused: Bool
 
     private let hourHeight: CGFloat = 84
@@ -23,11 +27,20 @@ struct TaskCalendarView: View {
     private var visibleItems: [TodoItem] {
         let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
         return items.filter {
-            !$0.isCompleted && (query.isEmpty || $0.title.localizedCaseInsensitiveContains(query)
-                               || $0.notes.localizedCaseInsensitiveContains(query))
+            !$0.isCompleted && $0.matchesSearch(query)
         }
     }
     private var flexible: [TodoItem] { visibleItems.filter { $0.scheduledStart() == nil } }
+
+    private var dragFeedback: String? {
+        switch drag.target {
+        case .time(let day, let minute):
+            let warning = drag.conflicts.first.map { " Overlaps \($0.title)" + (drag.conflicts.count > 1 ? " and \(drag.conflicts.count - 1) more." : ".") } ?? ""
+            return "Release to move to \(day.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())) · \(TodoItem.timeLabel(minute))." + warning + " Esc to cancel."
+        case .flexible: return "Release to remove the start time. Your date and estimate will stay."
+        case nil: return nil
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -40,35 +53,18 @@ struct TaskCalendarView: View {
                 ScrollView(.horizontal) {
                     VStack(spacing: 0) {
                         dayHeaders(columnWidth: columnWidth)
-                        ScrollViewReader { proxy in
-                            ScrollView(.vertical) {
-                                HStack(alignment: .top, spacing: 0) {
-                                    timeRuler
-                                    ForEach(days, id: \.self) { day in
-                                        CalendarDayColumn(
-                                            day: day, width: columnWidth, hourHeight: hourHeight,
-                                            blocks: TaskCalendarLayout.blocks(for: day, items: visibleItems),
-                                            selectedItemID: selectedItemID,
-                                            open: openDetails,
-                                            edit: { item in editor = CalendarEditRequest(item: item) },
-                                            create: { minute in editor = CalendarEditRequest(date: day, minute: minute) },
-                                            drop: { tokens, minute in move(tokens, to: day, minute: minute) },
-                                            makeFlexible: makeFlexible
-                                        )
-                                    }
-                                }
-                                .frame(width: width, height: hourHeight * 24)
-                            }
-                            .scrollPosition(id: $scrollHour, anchor: .top)
-                            .onAppear { proxy.scrollTo(8, anchor: .top) }
-                        }
+                        timeline(width: width, columnWidth: columnWidth)
                     }
                     .frame(width: width, height: geometry.size.height)
                 }
             }
+            .background(GeometryReader { geometry in
+                Color.clear.preference(key: CalendarVisibleFrameKey.self,
+                    value: geometry.frame(in: .named("calendarSurface")))
+            })
             HStack(spacing: 7) {
                 Image(systemName: "hand.draw").foregroundStyle(Palette.green)
-                Text(feedback).lineLimit(2)
+                Text(dragFeedback ?? feedback).lineLimit(2)
                 Spacer(minLength: 0)
             }
             .font(.system(size: 11)).foregroundStyle(.secondary)
@@ -77,6 +73,24 @@ struct TaskCalendarView: View {
             .accessibilityElement(children: .combine)
         }
         .background(Palette.background)
+        .coordinateSpace(name: "calendarSurface")
+        .onPreferenceChange(CalendarDayFramesKey.self) { drag.dayFrames = $0 }
+        .onPreferenceChange(CalendarViewportKey.self) { drag.viewport = $0 }
+        .onPreferenceChange(CalendarVisibleFrameKey.self) { drag.visibleFrame = $0 }
+        .onPreferenceChange(CalendarTrayFrameKey.self) { drag.tray = $0 }
+        .onChange(of: items.map(\.persistentModelID), initial: true) { _, _ in drag.candidates = items }
+        .onDisappear { drag.finish() }
+        .onReceive(NotificationCenter.default.publisher(for: .NSUndoManagerDidUndoChange)) { _ in resetFeedback() }
+        .onReceive(NotificationCenter.default.publisher(for: .NSUndoManagerDidRedoChange)) { _ in resetFeedback() }
+        .onExitCommand { drag.cancel() }
+        .onChange(of: scope) { _, _ in drag.cancel() }
+        .onChange(of: date) { _, _ in drag.cancel(); resetFeedback() }
+        .onChange(of: search) { _, _ in drag.cancel() }
+        .onChange(of: items.map(\.persistentModelID)) { _, ids in
+            if let selectedItemID, !ids.contains(selectedItemID) { self.selectedItemID = nil; resetFeedback() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in drag.cancel() }
+        .sheet(isPresented: $showingRunningLate) { RunningLateSheet(day: date) }
         .sheet(item: $editor) { request in
             CalendarTaskEditor(request: request) { title, day, minute, duration in
                 saveEditor(request, title: title, day: day, minute: minute, duration: duration)
@@ -89,6 +103,55 @@ struct TaskCalendarView: View {
             editor = CalendarEditRequest(date: date, minute: 540)
         }
         .onReceive(NotificationCenter.default.publisher(for: .focusSearchField)) { _ in searchFocused = true }
+    }
+
+    private func timeline(width: CGFloat, columnWidth: CGFloat) -> some View {
+        ScrollViewReader { proxy in
+            ScrollView(.vertical) {
+                HStack(alignment: .top, spacing: 0) {
+                    timeRuler
+                    ForEach(days, id: \.self) { day in
+                        CalendarDayColumn(
+                            day: day, width: columnWidth, hourHeight: hourHeight,
+                            drag: drag, showQuarterLines: scope == .day,
+                            blocks: TaskCalendarLayout.blocks(for: day, items: visibleItems),
+                            selectedItemID: selectedItemID,
+                            open: openDetails,
+                            edit: { item in editor = CalendarEditRequest(item: item) },
+                            create: { minute in editor = CalendarEditRequest(date: day, minute: minute) },
+                            finishDrag: finishDrag,
+                            makeFlexible: makeFlexible
+                        )
+                    }
+                }
+                .frame(width: width, height: hourHeight * 24)
+            }
+            .background(GeometryReader { geometry in
+                Color.clear.preference(key: CalendarViewportKey.self,
+                    value: geometry.frame(in: .named("calendarSurface")))
+            })
+            .scrollPosition(id: $scrollSlot, anchor: .top)
+            .onAppear { proxy.scrollTo(32, anchor: .top) }
+            .onChange(of: scrollToNowRequest) { _, _ in
+                let hour = Calendar.current.component(.hour, from: .now)
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+                    proxy.scrollTo(max(hour - 1, 0) * 4, anchor: .top)
+                }
+            }
+            .task(id: drag.isActive) {
+                guard drag.isActive else { return }
+                while !Task.isCancelled {
+                    do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+                    let direction = drag.edgeScrollDirection
+                    guard direction != 0 else { continue }
+                    let next = min(max((scrollSlot ?? 32) + direction, 0), 95)
+                    guard next != scrollSlot else { continue }
+                    withAnimation(reduceMotion ? nil : .linear(duration: 0.14)) {
+                        proxy.scrollTo(next, anchor: .top)
+                    }
+                }
+            }
+        }
     }
 
     private var header: some View {
@@ -109,6 +172,10 @@ struct TaskCalendarView: View {
                     .help(scope == .week ? "Previous week" : "Previous day")
                     .accessibilityLabel(scope == .week ? "Previous week" : "Previous day")
                 Button("Today") { date = Calendar.current.startOfDay(for: .now) }
+                Button("Now") {
+                    date = Calendar.current.startOfDay(for: .now)
+                    scrollToNowRequest += 1
+                }.help("Jump to the current time")
                 Button { navigate(1) } label: { Image(systemName: "chevron.right") }
                     .help(scope == .week ? "Next week" : "Next day")
                     .accessibilityLabel(scope == .week ? "Next week" : "Next day")
@@ -116,6 +183,8 @@ struct TaskCalendarView: View {
                     .labelsHidden().datePickerStyle(.field).fixedSize()
                     .accessibilityLabel("Go to calendar date")
                 Spacer(minLength: 0)
+                Button { showingRunningLate = true } label: { Image(systemName: "clock.arrow.circlepath") }
+                    .help("Running late? Preview a schedule shift").accessibilityLabel("Running late")
             }.controlSize(.small)
             HStack {
                 Text(rangeLabel).font(.system(size: 12, weight: .medium)).foregroundStyle(Palette.ink)
@@ -144,13 +213,13 @@ struct TaskCalendarView: View {
 
     private var flexibleTray: some View {
         VStack(alignment: .leading, spacing: 9) {
-            Button { showingFlexible.toggle() } label: {
+            Button { withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.18)) { showingFlexible.toggle() } } label: {
                 HStack(spacing: 7) {
                     Image(systemName: showingFlexible ? "chevron.down" : "chevron.right")
                     Text("FLEXIBLE TASKS").tracking(1.1)
                     Text("\(flexible.count)").foregroundStyle(.tertiary)
                     Spacer()
-                    Text("Drop here to remove a start time").font(.system(size: 10)).foregroundStyle(.secondary)
+                    Text(drag.target == .flexible ? "Release to make flexible" : "Drag to schedule").font(.system(size: 10)).foregroundStyle(.secondary)
                 }.font(.system(size: 10, weight: .semibold))
             }.buttonStyle(.plain).foregroundStyle(Palette.ink)
             if showingFlexible {
@@ -173,8 +242,17 @@ struct TaskCalendarView: View {
                                 .background(Palette.card, in: RoundedRectangle(cornerRadius: 8))
                                 .contentShape(Rectangle())
                                 .onTapGesture { openDetails(item) }
-                                .onDrag { dragProvider(for: item) }
-                                .contextMenu { Button("Schedule…") { editor = CalendarEditRequest(item: item, date: date) } }
+                                .gesture(DragGesture(minimumDistance: 4, coordinateSpace: .named("calendarSurface"))
+                                    .onChanged { value in
+                                        drag.begin(item, at: value.startLocation)
+                                        drag.update(value.location)
+                                    }
+                                    .onEnded { value in drag.update(value.location); finishDrag() })
+                                .opacity(drag.sourceID == item.persistentModelID && drag.isActive ? 0.25 : 1)
+                                .contextMenu {
+                                    Button("Schedule…") { editor = CalendarEditRequest(item: item, date: date) }
+                                    Button("Find a fit…") { NotificationCenter.default.post(name: .findTimeForTask, object: item.persistentModelID) }
+                                }
                                 .accessibilityElement(children: .combine)
                                 .accessibilityAddTraits(.isButton)
                                 .accessibilityAction { openDetails(item) }
@@ -185,11 +263,15 @@ struct TaskCalendarView: View {
             }
         }
         .padding(.horizontal, 20).padding(.vertical, 12)
-        .background(Palette.sidebar.opacity(0.5))
-        .dropDestination(for: String.self) { tokens, _ in
-            guard let item = draggedItem(tokens) else { return false }
-            return makeFlexible(item)
+        .background(drag.target == .flexible ? Palette.selection.opacity(0.7) : Palette.sidebar.opacity(0.5))
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(drag.target == .flexible ? Palette.green : .clear).frame(height: 2)
         }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: drag.target == .flexible)
+        .background(GeometryReader { geometry in
+            Color.clear.preference(key: CalendarTrayFrameKey.self,
+                value: geometry.frame(in: .named("calendarSurface")))
+        })
     }
 
     private func dayHeaders(columnWidth: CGFloat) -> some View {
@@ -218,13 +300,17 @@ struct TaskCalendarView: View {
 
     private var timeRuler: some View {
         VStack(spacing: 0) {
-            ForEach(0..<24) { hour in
-                Text(TodoItem.timeLabel(hour * 60))
+            ForEach(0..<96) { slot in
+                Text(slot % 4 == 0 ? TodoItem.timeLabel(slot * 15) : "")
                     .font(.system(size: 10)).monospacedDigit().foregroundStyle(.secondary)
-                    .frame(width: gutter, height: hourHeight, alignment: .top).id(hour)
+                    .frame(width: gutter, height: hourHeight / 4, alignment: .top).id(slot)
             }
         }
         .scrollTargetLayout()
+    }
+
+    private func resetFeedback() {
+        feedback = "Drag tasks to plan your time. Double-click an empty slot to add one."
     }
 
     private func navigate(_ direction: Int) {
@@ -236,16 +322,16 @@ struct TaskCalendarView: View {
         showingInspector = true
     }
 
-    private func draggedItem(_ tokens: [String]) -> TodoItem? {
-        guard tokens.count == 1, let token = tokens.first, token.hasPrefix("todoloo.calendar:") else { return nil }
-        let identifier = String(token.dropFirst("todoloo.calendar:".count))
-        return items.first { !$0.isCompleted && $0.reminderIdentifier == identifier }
-    }
-
-    private func move(_ tokens: [String], to day: Date, minute: Int) -> Bool {
-        guard let item = draggedItem(tokens) else { return false }
-        return change(item, actionName: "Move task") {
-            CalendarPlacement.move(item, to: day, minute: minute)
+    private func finishDrag() {
+        guard let (item, destination) = drag.release(), items.contains(where: { $0.persistentModelID == item.persistentModelID }) else { return }
+        switch destination {
+        case .time(let day, let minute):
+            if item.startMinuteOfDay == minute, let due = item.dueDate, Calendar.current.isDate(due, inSameDayAs: day) { return }
+            _ = change(item, actionName: "Move task") {
+                CalendarPlacement.move(item, to: day, minute: minute)
+            }
+        case .flexible:
+            if item.startMinuteOfDay != nil { _ = makeFlexible(item) }
         }
     }
 
@@ -262,7 +348,7 @@ struct TaskCalendarView: View {
         let undo = modelContext.undoManager
         undo?.beginUndoGrouping()
         defer { undo?.endUndoGrouping() }
-        guard mutation() else {
+        guard withAnimation(reduceMotion ? nil : .smooth(duration: 0.22), mutation) else {
             error = "That time doesn’t occur on this date because the clocks change. Choose another 15-minute slot."
             return false
         }
@@ -318,34 +404,40 @@ struct TaskCalendarView: View {
     }
 }
 
-private func dragProvider(for item: TodoItem) -> NSItemProvider {
-    if item.reminderIdentifier == nil { item.reminderIdentifier = UUID().uuidString }
-    return NSItemProvider(object: "todoloo.calendar:\(item.reminderIdentifier!)" as NSString)
-}
-
 private struct CalendarDayColumn: View {
     let day: Date
     let width: CGFloat
     let hourHeight: CGFloat
+    @ObservedObject var drag: CalendarDragState
+    let showQuarterLines: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let blocks: [CalendarBlock]
     let selectedItemID: PersistentIdentifier?
     let open: (TodoItem) -> Void
     let edit: (TodoItem) -> Void
     let create: (Int) -> Void
-    let drop: ([String], Int) -> Bool
+    let finishDrag: () -> Void
     let makeFlexible: (TodoItem) -> Bool
-    @State private var targeted = false
+    private var hoveredMinute: Int? {
+        guard case .time(let targetDay, let minute) = drag.target, targetDay == day else { return nil }
+        return minute
+    }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            Rectangle().fill(targeted ? Palette.selection.opacity(0.45) : Palette.card.opacity(0.35))
+            Rectangle().fill(Palette.card.opacity(0.25))
+                .contentShape(Rectangle())
+                .onTapGesture(count: 2, coordinateSpace: .local) { point in
+                    create(CalendarPlacement.snappedMinute(point.y / hourHeight * 60))
+                }
             Path { path in
                 for quarter in 0...96 {
                     let y = CGFloat(quarter) * hourHeight / 4
                     path.move(to: CGPoint(x: 0, y: y))
                     path.addLine(to: CGPoint(x: width, y: y))
                 }
-            }.stroke(Palette.green.opacity(0.07), lineWidth: 0.5)
+            }.stroke(Palette.green.opacity(showQuarterLines || hoveredMinute != nil ? 0.1 : 0.035), lineWidth: 0.5)
+                .allowsHitTesting(false)
             Path { path in
                 path.move(to: .zero)
                 path.addLine(to: CGPoint(x: 0, y: hourHeight * 24))
@@ -355,8 +447,12 @@ private struct CalendarDayColumn: View {
                     path.addLine(to: CGPoint(x: width, y: y))
                 }
             }.stroke(Palette.green.opacity(0.15), lineWidth: 0.5)
+                .allowsHitTesting(false)
             ForEach(blocks) { block in
                 event(block)
+            }
+            if let minute = hoveredMinute {
+                landingPreview(minute: minute).allowsHitTesting(false)
             }
             TimelineView(.periodic(from: .now, by: 60)) { context in
                 if Calendar.current.isDate(context.date, inSameDayAs: day) {
@@ -370,12 +466,40 @@ private struct CalendarDayColumn: View {
         }
         .frame(width: width, height: hourHeight * 24)
         .contentShape(Rectangle())
-        .onTapGesture(count: 2, coordinateSpace: .local) { point in
-            create(CalendarPlacement.snappedMinute(point.y / hourHeight * 60))
+        .background(GeometryReader { geometry in
+            Color.clear.preference(key: CalendarDayFramesKey.self,
+                value: [day: geometry.frame(in: .named("calendarSurface"))])
+        })
+    }
+
+    private func landingPreview(minute: Int) -> some View {
+        let start = CalendarPlacement.start(on: day, minute: minute)
+        let tint = start == nil ? Color.red : !drag.conflicts.isEmpty ? Color.orange
+            : drag.item?.listName == "Work" ? Color.blue : Palette.green
+        let visibleMinutes = min(drag.duration, 1440 - minute)
+        let height = max(CGFloat(visibleMinutes) / 60 * hourHeight - 2, 20)
+        let end = start?.addingTimeInterval(Double(drag.duration) * 60)
+        let endClock = end.map { Calendar.current.dateComponents([.hour, .minute], from: $0) }
+        let endLabel = endClock.map { TodoItem.timeLabel(($0.hour ?? 0) * 60 + ($0.minute ?? 0)) } ?? ""
+        let nextDay = end.map { !Calendar.current.isDate($0, inSameDayAs: day) } ?? false
+        let time = start == nil ? "Unavailable time" : "\(TodoItem.timeLabel(minute))–\(endLabel)" + (nextDay ? " (+1d)" : "")
+        return VStack(alignment: .leading, spacing: 3) {
+            Text(drag.title).font(.system(size: 11, weight: .semibold)).lineLimit(height >= 65 ? 2 : 1)
+            if height >= 38 { Text(time).font(.system(size: 10)).monospacedDigit().lineLimit(1) }
         }
-        .dropDestination(for: String.self) { tokens, point in
-            drop(tokens, CalendarPlacement.snappedMinute(point.y / hourHeight * 60))
-        } isTargeted: { targeted = $0 }
+        .padding(.horizontal, 7).padding(.vertical, height < 30 ? 2 : 5)
+        .frame(width: width - 8, height: height, alignment: .topLeading)
+        .foregroundStyle(Palette.ink)
+        .modifier(CalendarEventSurface(fill: Palette.selection, tint: tint, outlineWidth: 1.5))
+        .shadow(color: .black.opacity(0.12), radius: 4, x: 0, y: 2)
+        .overlay(alignment: .topLeading) {
+            Text(time).font(.system(size: 10, weight: .medium)).monospacedDigit()
+                .padding(.horizontal, 6).padding(.vertical, 3)
+                .foregroundStyle(Palette.background).background(tint, in: RoundedRectangle(cornerRadius: 4))
+                .fixedSize().offset(y: -22)
+        }
+        .offset(x: 4, y: CGFloat(minute) / 60 * hourHeight + 1)
+        .accessibilityHidden(true)
     }
 
     private func event(_ block: CalendarBlock) -> some View {
@@ -394,24 +518,30 @@ private struct CalendarDayColumn: View {
                 Text(block.item.plannedTimeLabel() ?? "").font(.system(size: 9)).monospacedDigit()
                     .lineLimit(1)
             }
-            if height >= 65 && block.item.durationMinutes == nil {
+            if height >= 65, let progress = block.item.checklistProgress {
+                Label(progress, systemImage: "checklist").font(.system(size: 9)).foregroundStyle(.secondary)
+            }
+            if height >= 65 && block.item.durationMinutes == nil && block.item.checklist.isEmpty {
                 Text("No estimate").font(.system(size: 9)).foregroundStyle(.secondary)
             }
         }
         .foregroundStyle(Palette.ink)
         .padding(.horizontal, 7).padding(.vertical, height < 30 ? 2 : 5)
         .frame(width: max(laneWidth - 3, 1), height: max(height, 18), alignment: .topLeading)
-        .background(selected ? Palette.selection : Palette.selection.opacity(0.7), in: RoundedRectangle(cornerRadius: 5))
-        .overlay(alignment: .leading) {
-            RoundedRectangle(cornerRadius: 2).fill(block.item.listName == "Work" ? Color.blue : Palette.green)
-                .frame(width: 3)
-        }
-        .overlay(RoundedRectangle(cornerRadius: 5).stroke(selected ? Palette.green : .clear, lineWidth: 1))
-        .clipped()
-        .contentShape(Rectangle())
+        .modifier(CalendarEventSurface(
+            fill: selected ? Palette.selection : Palette.selection.opacity(0.7),
+            tint: block.item.listName == "Work" ? Color.blue : Palette.green,
+            outlineWidth: selected ? 1 : 0
+        ))
         return card
         .onTapGesture { open(block.item) }
-        .onDrag { dragProvider(for: block.item) }
+        .gesture(DragGesture(minimumDistance: 4, coordinateSpace: .named("calendarSurface"))
+            .onChanged { value in
+                drag.begin(block.item, at: value.startLocation, day: day, startMinute: block.startMinute)
+                drag.update(value.location)
+            }
+            .onEnded { value in drag.update(value.location); finishDrag() })
+        .opacity(drag.sourceID == block.id && drag.isActive ? 0.16 : 1)
         .contextMenu { eventMenu(block.item) }
         .help(tooltip)
         .accessibilityElement(children: .ignore)
@@ -426,9 +556,31 @@ private struct CalendarDayColumn: View {
     private func eventMenu(_ item: TodoItem) -> some View {
         Button("Edit details") { open(item) }
         Button("Reschedule…") { edit(item) }
+        Button("Find a fit…") { NotificationCenter.default.post(name: .findTimeForTask, object: item.persistentModelID) }
+        Button(item.isFixedTime ? "Allow time shifts" : "Keep time fixed") { item.isFixedTime.toggle() }
+        if item.routineRule != .none { Button("Skip once") { item.advanceRoutine(completed: false) } }
         Button("Make flexible") { _ = makeFlexible(item) }
         Divider()
-        Button("Complete task") { item.setCompleted(true) }
+        Button(item.routineRule == .none ? "Complete task" : "Complete occurrence") { item.setCompleted(true) }
+    }
+}
+
+/// One silhouette for the fill, accent strip, hit area, and inset selection border.
+private struct CalendarEventSurface: ViewModifier {
+    let fill: Color
+    let tint: Color
+    let outlineWidth: CGFloat
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 6, style: .continuous)
+        content
+            .background(fill)
+            .overlay(alignment: .leading) {
+                Rectangle().fill(tint).frame(width: 3)
+            }
+            .clipShape(shape)
+            .overlay(shape.strokeBorder(tint, lineWidth: outlineWidth))
+            .contentShape(shape)
     }
 }
 

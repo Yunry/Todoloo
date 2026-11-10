@@ -10,7 +10,7 @@ struct TodoInspectorView: View {
     var body: some View {
         Group {
             if let item = items.first(where: { $0.persistentModelID == itemID }) {
-                TaskDetailsForm(item: item, otherItems: items)
+                TaskDetailsForm(item: item, otherItems: items).id(item.persistentModelID)
             } else {
                 VStack(spacing: 14) {
                     Image(systemName: "text.alignleft").font(.system(size: 28, weight: .ultraLight))
@@ -30,6 +30,8 @@ private struct TaskDetailsForm: View {
     let otherItems: [TodoItem]
     @Environment(\.modelContext) private var modelContext
     @State private var saveError: String?
+    @State private var checklistDraft = ""
+    @Query private var lists: [TaskList]
     @EnvironmentObject private var reminders: ReminderScheduler
 
     var body: some View {
@@ -40,13 +42,20 @@ private struct TaskDetailsForm: View {
                     .font(.system(size: 22, weight: .regular, design: .serif))
                     .textFieldStyle(.plain).lineLimit(1...8).foregroundStyle(Palette.ink)
                     .accessibilityLabel("Task title")
-                Toggle("Completed", isOn: Binding(get: { item.isCompleted }, set: { item.setCompleted($0) }))
+                Toggle(item.routineRule != .none && !item.isCompleted ? "Complete occurrence" : "Completed", isOn: Binding(get: { item.isCompleted }, set: { item.setCompleted($0) }))
                     .toggleStyle(.checkbox)
+                if !item.isCompleted {
+                    Button("Find a fit…") { NotificationCenter.default.post(name: .findTimeForTask, object: item.persistentModelID) }
+                        .buttonStyle(.bordered).controlSize(.small)
+                }
+                Divider()
+                routineControls
                 Divider()
                 VStack(alignment: .leading, spacing: 16) {
                     Picker(selection: $item.listName) {
-                        Text("Personal").tag("Personal")
-                        Text("Work").tag("Work")
+                        ForEach(ListCatalog.names(lists: lists, items: otherItems), id: \.self) { name in
+                            Label(name, systemImage: ListCatalog.symbol(for: name, lists: lists)).tag(name)
+                        }
                     } label: { Label("List", systemImage: "tray") }
                     Toggle(isOn: $item.isImportant) { Label("Important", systemImage: "flag") }
                         .toggleStyle(.switch).controlSize(.small)
@@ -72,6 +81,9 @@ private struct TaskDetailsForm: View {
                         Label("Start time", systemImage: "clock.badge")
                     }.toggleStyle(.switch).controlSize(.small)
                     if item.startMinuteOfDay != nil {
+                        Toggle(isOn: $item.isFixedTime) { Label("Fixed time", systemImage: "lock") }
+                            .toggleStyle(.checkbox)
+                            .help("Running late keeps this task in place. You can still reschedule it manually.")
                         HStack(spacing: 5) {
                             Text("Start at")
                             Spacer()
@@ -123,7 +135,8 @@ private struct TaskDetailsForm: View {
                     if let interval = item.plannedInterval() {
                         let finishDay = Calendar.current.isDate(interval.start, inSameDayAs: interval.end)
                             ? "" : " · \(interval.end.formatted(.dateTime.month(.abbreviated).day()))"
-                        Label("Estimated finish: \(interval.end.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute()))\(finishDay)",
+                        let endClock = Calendar.current.dateComponents([.hour, .minute], from: interval.end)
+                        Label("Estimated finish: \(TodoItem.timeLabel((endClock.hour ?? 0) * 60 + (endClock.minute ?? 0)))\(finishDay)",
                               systemImage: "flag.checkered")
                             .foregroundStyle(.secondary)
                         let conflicts = otherItems.filter { item.overlaps($0) }
@@ -144,6 +157,8 @@ private struct TaskDetailsForm: View {
                         }
                     }
                 }.font(.system(size: 12))
+                Divider()
+                checklistSection
                 Divider()
                 VStack(alignment: .leading, spacing: 12) {
                     Label("NOTES", systemImage: "text.alignleft")
@@ -173,6 +188,74 @@ private struct TaskDetailsForm: View {
             Button("OK", role: .cancel) { saveError = nil }
         } message: { Text(saveError ?? "") }
     }
+    private var routineControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Picker("Repeat", selection: Binding(get: { item.routineRule }, set: { item.setRoutine($0) })) {
+                ForEach(RoutineRule.allCases) { Text($0.label).tag($0) }
+            }.font(.system(size: 12))
+            if item.routineRule != .none {
+                Text("Completing or skipping advances this one task to its next date. Checklist steps reset for the new occurrence.")
+                    .font(.system(size: 11)).foregroundStyle(.secondary)
+                if let date = item.routineRule.nextDate(for: item, now: .now, calendar: .current) {
+                    Text("After completion: " + date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
+                        .font(.system(size: 11)).foregroundStyle(Palette.green)
+                }
+                if !item.isCompleted {
+                    Button("Skip once") { item.advanceRoutine(completed: false) }.controlSize(.small)
+                }
+                if item.routineCompletionCount > 0 {
+                    Text("\(item.routineCompletionCount) \(item.routineCompletionCount == 1 ? "occurrence" : "occurrences") completed")
+                        .font(.system(size: 11)).foregroundStyle(.secondary)
+                }
+                if item.isCompleted { Text("Reopen this task to resume its routine.").font(.system(size: 11)).foregroundStyle(.secondary) }
+            }
+        }
+    }
+
+    private var checklistSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("CHECKLIST", systemImage: "checklist")
+                    .font(.system(size: 10, weight: .semibold)).tracking(1.2)
+                Spacer()
+                if let progress = item.checklistProgress {
+                    Text(progress).font(.system(size: 10)).monospacedDigit()
+                }
+            }.foregroundStyle(.secondary)
+            ForEach(item.checklist) { entry in
+                HStack(alignment: .top, spacing: 7) {
+                    Toggle(entry.title, isOn: Binding(get: {
+                        item.checklist.first { $0.id == entry.id }?.isCompleted ?? false
+                    }, set: { item.updateChecklistEntry(entry.id, completed: $0) }))
+                        .labelsHidden().toggleStyle(.checkbox).accessibilityLabel("Complete step: \(entry.title)")
+                    TextField("Step", text: Binding(get: {
+                        item.checklist.first { $0.id == entry.id }?.title ?? ""
+                    }, set: { item.updateChecklistEntry(entry.id, title: $0) }), axis: .vertical)
+                        .textFieldStyle(.plain).font(.system(size: 12)).lineLimit(1...4)
+                        .strikethrough(entry.isCompleted).foregroundStyle(entry.isCompleted ? .secondary : Palette.ink)
+                        .accessibilityLabel("Checklist step")
+                    Button { item.removeChecklistEntry(entry.id) } label: {
+                        Image(systemName: "xmark").font(.system(size: 9))
+                    }.buttonStyle(.plain).foregroundStyle(.secondary)
+                        .help("Remove step").accessibilityLabel("Remove step: \(entry.title)")
+                }.padding(.vertical, 3)
+            }
+            HStack(spacing: 6) {
+                TextField("Add a step…", text: $checklistDraft)
+                    .textFieldStyle(.plain).font(.system(size: 12))
+                    .onSubmit(addChecklistEntries).accessibilityLabel("New checklist step")
+                Button(action: addChecklistEntries) { Image(systemName: "plus.circle.fill") }
+                    .buttonStyle(.plain).foregroundStyle(Palette.green).accessibilityLabel("Add checklist step")
+                    .disabled(checklistDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }.padding(9).background(Palette.sidebar, in: RoundedRectangle(cornerRadius: 7))
+        }
+    }
+
+    private func addChecklistEntries() {
+        item.addChecklistEntries(checklistDraft)
+        checklistDraft = ""
+    }
+
     private var titleBinding: Binding<String> {
         Binding(get: { item.title }, set: { value in
             if !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { item.title = value }
